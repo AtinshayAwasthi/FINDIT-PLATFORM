@@ -1,66 +1,45 @@
 
-import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Search, Flag, LocateFixed, Check } from 'lucide-react';
-import { api } from '@/lib/api';
 import Navigation from '@/components/Navigation';
 import Hero from '@/components/Hero';
 import ItemCard, { ItemCardProps } from '@/components/ItemCard';
-import { Skeleton } from '@/components/ui/skeleton';
 
 const Index = () => {
-  const [featuredItems, setFeaturedItems] = useState<ItemCardProps[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  
-  useEffect(() => {
-    const fetchRecentItems = async () => {
-      try {
-        setIsLoading(true);
-        const response = await api.get('/api/items/recent');
-        setFeaturedItems(response.data);
-      } catch (error) {
-        console.error('Error fetching recent items:', error);
-        // Fallback to sample data
-        setFeaturedItems([
-          {
-            id: '1',
-            title: 'iPhone 14 Pro - Space Black',
-            description: 'Lost in Central Park near the boathouse. Has a distinctive blue case with star patterns.',
-            type: 'lost',
-            location: 'Central Park, New York',
-            date: 'April 12, 2023',
-            category: 'Electronics',
-            image: 'https://images.unsplash.com/photo-1580910051074-3eb694886505?w=800&auto=format&fit=crop',
-          },
-          {
-            id: '2',
-            title: 'Gold Ring with Diamond',
-            description: 'Found at Lincoln Center after the evening performance. Small diamond in the center.',
-            type: 'found',
-            location: 'Lincoln Center, New York',
-            date: 'April 15, 2023',
-            category: 'Jewelry',
-            image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=800&auto=format&fit=crop',
-          },
-          {
-            id: '3',
-            title: 'Brown Leather Wallet',
-            description: 'Lost at Times Square subway station. Contains ID cards and some cash.',
-            type: 'lost',
-            location: 'Times Square, New York',
-            date: 'April 10, 2023',
-            category: 'Accessories',
-            image: 'https://images.unsplash.com/photo-1627123424574-724758594e93?w=800&auto=format&fit=crop',
-          },
-        ]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchRecentItems();
-  }, []);
+  // Sample data for demonstration
+  const featuredItems: ItemCardProps[] = [
+    {
+      id: '1',
+      title: 'iPhone 14 Pro - Space Black',
+      description: 'Lost in Central Park near the boathouse. Has a distinctive blue case with star patterns.',
+      type: 'lost',
+      location: 'Central Park, New York',
+      date: 'April 12, 2023',
+      category: 'Electronics',
+      image: 'https://images.unsplash.com/photo-1580910051074-3eb694886505?w=800&auto=format&fit=crop',
+    },
+    {
+      id: '2',
+      title: 'Gold Ring with Diamond',
+      description: 'Found at Lincoln Center after the evening performance. Small diamond in the center.',
+      type: 'found',
+      location: 'Lincoln Center, New York',
+      date: 'April 15, 2023',
+      category: 'Jewelry',
+      image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=800&auto=format&fit=crop',
+    },
+    {
+      id: '3',
+      title: 'Brown Leather Wallet',
+      description: 'Lost at Times Square subway station. Contains ID cards and some cash.',
+      type: 'lost',
+      location: 'Times Square, New York',
+      date: 'April 10, 2023',
+      category: 'Accessories',
+      image: 'https://images.unsplash.com/photo-1627123424574-724758594e93?w=800&auto=format&fit=crop',
+    },
+  ];
   
   const features = [
     {
@@ -104,31 +83,11 @@ const Index = () => {
             </p>
           </div>
           
-          {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="border border-border rounded-xl overflow-hidden">
-                  <Skeleton className="h-56 w-full" />
-                  <div className="p-5 space-y-3">
-                    <Skeleton className="h-6 w-3/4" />
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-full" />
-                    <div className="flex flex-col gap-2 pt-3">
-                      <Skeleton className="h-4 w-full" />
-                      <Skeleton className="h-4 w-full" />
-                      <Skeleton className="h-4 w-full" />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {featuredItems.map((item) => (
-                <ItemCard key={item.id} {...item} />
-              ))}
-            </div>
-          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {featuredItems.map((item) => (
+              <ItemCard key={item.id} {...item} />
+            ))}
+          </div>
           
           <div className="mt-12 text-center">
             <Link
@@ -223,8 +182,8 @@ const Index = () => {
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="mb-6 md:mb-0">
               <Link to="/" className="text-xl font-medium flex items-center gap-2">
-                <span className="text-primary text-2xl font-bold">🔍</span>
-                <span>FindIt</span>
+                <span className="text-primary text-2xl font-bold">⟲</span>
+                <span>RetrieverHub</span>
               </Link>
               <p className="mt-2 text-sm text-foreground/60">
                 Helping people find their lost belongings
@@ -248,7 +207,7 @@ const Index = () => {
           </div>
           
           <div className="mt-10 pt-6 border-t border-border text-center text-sm text-foreground/60">
-            <p>&copy; {new Date().getFullYear()} FindIt. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} RetrieverHub. All rights reserved.</p>
           </div>
         </div>
       </footer>

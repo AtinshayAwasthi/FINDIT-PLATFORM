@@ -45,9 +45,9 @@ const Navigation = () => {
               transition={{ type: 'spring', stiffness: 200 }}
               className="text-primary text-3xl font-bold"
             >
-              🔍
+              ⟲
             </motion.div>
-            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent font-semibold">FindIt</span>
+            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent font-semibold">RetrieverHub</span>
           </Link>
           
           {/* Desktop Navigation */}
@@ -73,12 +73,6 @@ const Navigation = () => {
                 )}
               </Link>
             ))}
-            <Link
-              to="/login"
-              className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
-            >
-              Login
-            </Link>
           </div>
           
           {/* Mobile Menu Button */}
@@ -122,13 +116,6 @@ const Navigation = () => {
                   {link.name}
                 </Link>
               ))}
-              <Link
-                to="/login"
-                className="py-2 px-4 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Login
-              </Link>
             </div>
           </motion.div>
         )}
