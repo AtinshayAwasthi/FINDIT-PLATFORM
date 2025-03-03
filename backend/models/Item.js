@@ -4,43 +4,37 @@ const mongoose = require('mongoose');
 const ItemSchema = new mongoose.Schema({
   title: {
     type: String,
-    required: [true, 'Please add a title'],
+    required: [true, 'Please provide a title'],
     trim: true,
-    maxlength: [100, 'Title cannot be more than 100 characters']
+    maxlength: [100, 'Title can not be more than 100 characters']
   },
   description: {
     type: String,
-    required: [true, 'Please add a description'],
-    maxlength: [1000, 'Description cannot be more than 1000 characters']
-  },
-  type: {
-    type: String,
-    required: [true, 'Please specify if the item is lost or found'],
-    enum: ['lost', 'found']
-  },
-  category: {
-    type: String,
-    required: [true, 'Please add a category']
+    required: [true, 'Please provide a description'],
+    maxlength: [1000, 'Description can not be more than 1000 characters']
   },
   location: {
     type: String,
-    required: [true, 'Please add a location']
+    required: [true, 'Please provide a location']
+  },
+  category: {
+    type: String,
+    required: [true, 'Please provide a category']
   },
   date: {
     type: Date,
-    required: [true, 'Please add the date when the item was lost/found']
+    required: [true, 'Please provide a date']
+  },
+  type: {
+    type: String,
+    enum: ['lost', 'found'],
+    required: [true, 'Please specify if the item is lost or found']
   },
   image: {
-    type: String,
-    default: 'no-photo.jpg'
-  },
-  status: {
-    type: String,
-    enum: ['open', 'closed', 'resolved'],
-    default: 'open'
+    type: String
   },
   user: {
-    type: mongoose.Schema.ObjectId,
+    type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
   },

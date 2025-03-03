@@ -1,23 +1,15 @@
 
 const express = require('express');
-const cors = require('cors');
 const mongoose = require('mongoose');
-const dotenv = require('dotenv');
+const cors = require('cors');
 const path = require('path');
-const multer = require('multer');
+const dotenv = require('dotenv');
 const fs = require('fs');
 
 // Load environment variables
 dotenv.config();
 
-// Import routes
-const authRoutes = require('./routes/authRoutes');
-const itemRoutes = require('./routes/itemRoutes');
-
-// Import middleware
-const errorMiddleware = require('./middlewares/errorMiddleware');
-
-// Initialize Express app
+// Initialize Express
 const app = express();
 
 // Create uploads directory if it doesn't exist
@@ -26,61 +18,32 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: function(req, file, cb) {
-    cb(null, 'uploads/');
-  },
-  filename: function(req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(file.originalname);
-    cb(null, uniqueSuffix + ext);
-  }
-});
-
 // Middleware
+app.use(express.json());
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
     ? 'https://yourdomain.com' 
-    : ['http://localhost:8080', 'http://localhost:3000'],
+    : ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173'],
   credentials: true
 }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+
+// Serve static files from uploads directory
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/items', itemRoutes);
+app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/items', require('./routes/itemRoutes'));
 
-// Health check route
-app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'ok', message: 'Server is up and running' });
-});
-
-// Handle 404 errors
-app.use((req, res, next) => {
-  res.status(404).json({ message: 'Route not found' });
-});
-
-// Error handling middleware
-app.use(errorMiddleware);
-
-// Connect to MongoDB and start server
-const PORT = process.env.PORT || 5000;
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/findit';
-
-mongoose
-  .connect(MONGODB_URI)
+// Connect to MongoDB
+mongoose.connect(process.env.MONGO_URI)
   .then(() => {
-    console.log('Connected to MongoDB');
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
+    console.log('MongoDB Connected');
+    
+    // Start server
+    const PORT = process.env.PORT || 5000;
+    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
   })
-  .catch((err) => {
+  .catch(err => {
     console.error('MongoDB connection error:', err);
     process.exit(1);
   });
-
-module.exports = app;

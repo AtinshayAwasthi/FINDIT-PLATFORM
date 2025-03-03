@@ -3,12 +3,14 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, User, LogOut } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Navigation = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const { isAuthenticated, logout, user } = useAuth();
   
   useEffect(() => {
     const handleScroll = () => {
@@ -73,12 +75,32 @@ const Navigation = () => {
                 )}
               </Link>
             ))}
-            <Link
-              to="/login"
-              className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
-            >
-              Login
-            </Link>
+            
+            {isAuthenticated ? (
+              <div className="flex items-center gap-4">
+                <Link
+                  to="/profile"
+                  className="flex items-center gap-2 text-foreground/80 hover:text-foreground transition-colors py-2"
+                >
+                  <User className="h-4 w-4" />
+                  <span>{user?.name?.split(' ')[0] || 'Profile'}</span>
+                </Link>
+                <button
+                  onClick={logout}
+                  className="flex items-center gap-2 px-4 py-2 bg-destructive/90 text-white rounded-md hover:bg-destructive transition-colors"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Logout</span>
+                </button>
+              </div>
+            ) : (
+              <Link
+                to="/login"
+                className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
+              >
+                Login
+              </Link>
+            )}
           </div>
           
           {/* Mobile Menu Button */}
@@ -122,13 +144,37 @@ const Navigation = () => {
                   {link.name}
                 </Link>
               ))}
-              <Link
-                to="/login"
-                className="py-2 px-4 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Login
-              </Link>
+              
+              {isAuthenticated ? (
+                <>
+                  <Link
+                    to="/profile"
+                    className="py-2 px-4 flex items-center gap-2 rounded-md text-foreground/80 hover:bg-secondary"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <User className="h-4 w-4" />
+                    Profile
+                  </Link>
+                  <button
+                    onClick={() => {
+                      logout();
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="py-2 px-4 flex items-center gap-2 bg-destructive/90 text-white rounded-md hover:bg-destructive transition-colors"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <Link
+                  to="/login"
+                  className="py-2 px-4 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Login
+                </Link>
+              )}
             </div>
           </motion.div>
         )}

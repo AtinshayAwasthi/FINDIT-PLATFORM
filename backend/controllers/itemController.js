@@ -1,252 +1,216 @@
 
 const Item = require('../models/Item');
+const fs = require('fs');
 const path = require('path');
 
-// @desc    Get all items
-// @route   GET /api/items
-// @access  Public
-exports.getItems = async (req, res, next) => {
+// Get all items with filtering
+exports.getItems = async (req, res) => {
   try {
-    let query;
-
-    // Copy req.query
-    const reqQuery = { ...req.query };
-
-    // Fields to exclude
-    const removeFields = ['select', 'sort', 'page', 'limit'];
-
-    // Loop over removeFields and delete them from reqQuery
-    removeFields.forEach(param => delete reqQuery[param]);
-
-    // Create query string
-    let queryStr = JSON.stringify(reqQuery);
-
-    // Create operators ($gt, $gte, etc)
-    queryStr = queryStr.replace(/\b(gt|gte|lt|lte|in)\b/g, match => `$${match}`);
-
-    // Finding resource
-    query = Item.find(JSON.parse(queryStr)).populate({
-      path: 'user',
-      select: 'name'
-    });
-
-    // Select Fields
-    if (req.query.select) {
-      const fields = req.query.select.split(',').join(' ');
-      query = query.select(fields);
+    const { type, category, search, location, startDate, endDate } = req.query;
+    
+    // Build query
+    const query = {};
+    
+    // Type filter (lost/found)
+    if (type) {
+      query.type = type;
     }
-
-    // Sort
-    if (req.query.sort) {
-      const sortBy = req.query.sort.split(',').join(' ');
-      query = query.sort(sortBy);
-    } else {
-      query = query.sort('-createdAt');
+    
+    // Category filter
+    if (category) {
+      query.category = category;
     }
-
-    // Pagination
-    const page = parseInt(req.query.page, 10) || 1;
-    const limit = parseInt(req.query.limit, 10) || 10;
-    const startIndex = (page - 1) * limit;
-    const endIndex = page * limit;
-    const total = await Item.countDocuments(JSON.parse(queryStr));
-
-    query = query.skip(startIndex).limit(limit);
-
-    // Executing query
-    const items = await query;
-
-    // Pagination result
-    const pagination = {};
-
-    if (endIndex < total) {
-      pagination.next = {
-        page: page + 1,
-        limit
-      };
+    
+    // Location filter
+    if (location) {
+      query.location = { $regex: location, $options: 'i' };
     }
-
-    if (startIndex > 0) {
-      pagination.prev = {
-        page: page - 1,
-        limit
-      };
+    
+    // Date range filter
+    if (startDate || endDate) {
+      query.date = {};
+      if (startDate) {
+        query.date.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        query.date.$lte = new Date(endDate);
+      }
     }
-
-    res.status(200).json({
-      success: true,
-      count: items.length,
-      pagination,
-      data: items
-    });
+    
+    // Search filter
+    if (search) {
+      query.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } }
+      ];
+    }
+    
+    const items = await Item.find(query)
+      .sort({ createdAt: -1 })
+      .populate('user', 'name');
+      
+    res.status(200).json(items);
   } catch (error) {
-    next(error);
+    console.error('Get items error:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
-// @desc    Get single item
-// @route   GET /api/items/:id
-// @access  Public
-exports.getItem = async (req, res, next) => {
+// Get recent items
+exports.getRecentItems = async (req, res) => {
   try {
-    const item = await Item.findById(req.params.id).populate({
-      path: 'user',
-      select: 'name'
-    });
+    const items = await Item.find()
+      .sort({ createdAt: -1 })
+      .limit(6)
+      .populate('user', 'name');
+      
+    res.status(200).json(items);
+  } catch (error) {
+    console.error('Get recent items error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
 
+// Get user's items
+exports.getUserItems = async (req, res) => {
+  try {
+    const { type } = req.params;
+    
+    const items = await Item.find({
+      user: req.user.id,
+      type: type
+    })
+    .sort({ createdAt: -1 });
+    
+    res.status(200).json(items);
+  } catch (error) {
+    console.error('Get user items error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Get item by ID
+exports.getItemById = async (req, res) => {
+  try {
+    const item = await Item.findById(req.params.id)
+      .populate('user', 'name');
+      
     if (!item) {
-      return res.status(404).json({
-        success: false,
-        message: `Item not found with id of ${req.params.id}`
-      });
+      return res.status(404).json({ message: 'Item not found' });
     }
-
-    res.status(200).json({
-      success: true,
-      data: item
-    });
+    
+    res.status(200).json(item);
   } catch (error) {
-    next(error);
+    console.error('Get item by ID error:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
-// @desc    Create new item
-// @route   POST /api/items
-// @access  Private
-exports.createItem = async (req, res, next) => {
+// Create a new item
+exports.createItem = async (req, res) => {
   try {
-    // Add user to req.body
-    req.body.user = req.user.id;
-
-    // Check for image upload
-    if (req.file) {
-      req.body.image = req.file.filename;
-    }
-
-    const item = await Item.create(req.body);
-
-    res.status(201).json({
-      success: true,
-      data: item
+    const { title, description, location, category, date, type } = req.body;
+    
+    // Create new item
+    const item = new Item({
+      title,
+      description,
+      location,
+      category,
+      date,
+      type,
+      user: req.user.id
     });
+    
+    // Handle image upload
+    if (req.file) {
+      item.image = `/uploads/${req.file.filename}`;
+    }
+    
+    await item.save();
+    
+    res.status(201).json(item);
   } catch (error) {
-    next(error);
+    console.error('Create item error:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
-// @desc    Update item
-// @route   PUT /api/items/:id
-// @access  Private
-exports.updateItem = async (req, res, next) => {
+// Update item
+exports.updateItem = async (req, res) => {
   try {
     let item = await Item.findById(req.params.id);
-
+    
+    // Check if item exists
     if (!item) {
-      return res.status(404).json({
-        success: false,
-        message: `Item not found with id of ${req.params.id}`
-      });
+      return res.status(404).json({ message: 'Item not found' });
     }
-
-    // Make sure user is item owner
+    
+    // Check ownership
     if (item.user.toString() !== req.user.id) {
-      return res.status(401).json({
-        success: false,
-        message: `User ${req.user.id} is not authorized to update this item`
-      });
+      return res.status(403).json({ message: 'Not authorized' });
     }
-
-    // Check for image upload
+    
+    // Update fields
+    const { title, description, location, category, date, type } = req.body;
+    
+    if (title) item.title = title;
+    if (description) item.description = description;
+    if (location) item.location = location;
+    if (category) item.category = category;
+    if (date) item.date = date;
+    if (type) item.type = type;
+    
+    // Handle image upload
     if (req.file) {
-      req.body.image = req.file.filename;
+      // Delete old image if exists
+      if (item.image) {
+        const oldImagePath = path.join(__dirname, '..', item.image);
+        if (fs.existsSync(oldImagePath)) {
+          fs.unlinkSync(oldImagePath);
+        }
+      }
+      
+      item.image = `/uploads/${req.file.filename}`;
     }
-
-    item = await Item.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true
-    });
-
-    res.status(200).json({
-      success: true,
-      data: item
-    });
+    
+    await item.save();
+    
+    res.status(200).json(item);
   } catch (error) {
-    next(error);
+    console.error('Update item error:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
-// @desc    Delete item
-// @route   DELETE /api/items/:id
-// @access  Private
-exports.deleteItem = async (req, res, next) => {
+// Delete item
+exports.deleteItem = async (req, res) => {
   try {
     const item = await Item.findById(req.params.id);
-
+    
+    // Check if item exists
     if (!item) {
-      return res.status(404).json({
-        success: false,
-        message: `Item not found with id of ${req.params.id}`
-      });
+      return res.status(404).json({ message: 'Item not found' });
     }
-
-    // Make sure user is item owner
+    
+    // Check ownership
     if (item.user.toString() !== req.user.id) {
-      return res.status(401).json({
-        success: false,
-        message: `User ${req.user.id} is not authorized to delete this item`
-      });
+      return res.status(403).json({ message: 'Not authorized' });
     }
-
-    await item.deleteOne();
-
-    res.status(200).json({
-      success: true,
-      data: {}
-    });
+    
+    // Delete image if exists
+    if (item.image) {
+      const imagePath = path.join(__dirname, '..', item.image);
+      if (fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath);
+      }
+    }
+    
+    await item.remove();
+    
+    res.status(200).json({ message: 'Item deleted' });
   } catch (error) {
-    next(error);
-  }
-};
-
-// @desc    Upload photo for item
-// @route   PUT /api/items/:id/photo
-// @access  Private
-exports.itemPhotoUpload = async (req, res, next) => {
-  try {
-    const item = await Item.findById(req.params.id);
-
-    if (!item) {
-      return res.status(404).json({
-        success: false,
-        message: `Item not found with id of ${req.params.id}`
-      });
-    }
-
-    // Make sure user is item owner
-    if (item.user.toString() !== req.user.id) {
-      return res.status(401).json({
-        success: false,
-        message: `User ${req.user.id} is not authorized to update this item`
-      });
-    }
-
-    if (!req.file) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please upload a file'
-      });
-    }
-
-    // Update item with new image
-    await Item.findByIdAndUpdate(req.params.id, {
-      image: req.file.filename
-    });
-
-    res.status(200).json({
-      success: true,
-      data: req.file.filename
-    });
-  } catch (error) {
-    next(error);
+    console.error('Delete item error:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
