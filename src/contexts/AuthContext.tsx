@@ -80,51 +80,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // AuthContext.tsx
+  const login = async (email: string, password: string) => {
+    setIsLoading(true);
+    try {
+      console.log('Attempting login with:', { email }); // Debug log
 
-const login = async (email: string, password: string) => {
-  setIsLoading(true);
-  try {
-    console.log('Attempting login with:', { email }); // Debug log
+      const response = await api.post('/api/auth/login', { 
+        email, 
+        password 
+      });
 
-    const response = await api.post('/api/auth/login', { 
-      email, 
-      password 
-    });
+      console.log('Login response:', response.data); // Debug log
 
-    console.log('Login response:', response.data); // Debug log
+      const { token: authToken, user: userData } = response.data;
+      
+      if (!authToken || !userData) {
+        throw new Error('Invalid response from server');
+      }
 
-    const { token, user } = response.data;
-    
-    if (!token || !user) {
-      throw new Error('Invalid response from server');
+      localStorage.setItem('token', authToken);
+      api.defaults.headers.common['Authorization'] = `Bearer ${authToken}`;
+      setToken(authToken);
+      setUser(userData);
+      
+      toast({
+        title: "Welcome back!",
+        description: "You have successfully logged in.",
+      });
+      
+      navigate('/');
+    } catch (error: any) {
+      console.error('Login error:', error); // Debug log
+      const message = error.response?.data?.message || "Login failed. Please try again.";
+      toast({
+        variant: "destructive",
+        title: "Login Failed",
+        description: message,
+      });
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
-
-    localStorage.setItem('token', token);
-    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    setToken(token);
-    setUser(user);
-    
-    toast({
-      title: "Welcome back!",
-      description: "You have successfully logged in.",
-    });
-    
-    navigate('/');
-  } catch (error: any) {
-    console.error('Login error:', error); // Debug log
-    const message = error.response?.data?.message || "Login failed. Please try again.";
-    toast({
-      variant: "destructive",
-      title: "Login Failed",
-      description: message,
-    });
-    throw error;
-  } finally {
-    setIsLoading(false);
-  }
-};
-
+  };
 
   const signup = async (name: string, email: string, password: string) => {
     setIsLoading(true);
