@@ -10,6 +10,8 @@ export const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  // Add withCredentials to allow cookies to be sent and received across domains
+  withCredentials: true,
 });
 
 // Add a request interceptor to include the auth token in all requests
