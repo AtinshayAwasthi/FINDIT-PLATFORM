@@ -59,13 +59,15 @@ export const useAuthService = () => {
 
       console.log('Login response:', response.data); // Debug log
 
-      const { token: authToken, user: userData } = response.data;
+      // Extract token and user directly from response.data
+      const { token, user } = response.data;
       
-      if (!authToken || !userData) {
+      if (!token || !user) {
         throw new Error('Invalid response from server');
       }
 
-      updateAuthState(userData, authToken, false);
+      // Update auth state with the user and token from response
+      updateAuthState(user, token, false);
       
       toast({
         title: "Welcome back!",
