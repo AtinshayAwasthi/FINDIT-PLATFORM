@@ -38,10 +38,13 @@ const storage = multer.diskStorage({
   }
 });
 
-const upload = multer({ storage: storage });
-
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' 
+    ? 'https://yourdomain.com' 
+    : ['http://localhost:8080', 'http://localhost:3000'],
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

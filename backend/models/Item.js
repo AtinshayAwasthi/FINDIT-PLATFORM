@@ -11,7 +11,6 @@ const ItemSchema = new mongoose.Schema({
   description: {
     type: String,
     required: [true, 'Please add a description'],
-    trim: true,
     maxlength: [1000, 'Description cannot be more than 1000 characters']
   },
   type: {
@@ -21,22 +20,24 @@ const ItemSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    required: [true, 'Please add a category'],
-    trim: true
+    required: [true, 'Please add a category']
   },
   location: {
     type: String,
-    required: [true, 'Please add a location'],
-    trim: true
+    required: [true, 'Please add a location']
   },
   date: {
     type: Date,
-    required: [true, 'Please add a date'],
-    default: Date.now
+    required: [true, 'Please add the date when the item was lost/found']
   },
   image: {
     type: String,
-    default: null
+    default: 'no-photo.jpg'
+  },
+  status: {
+    type: String,
+    enum: ['open', 'closed', 'resolved'],
+    default: 'open'
   },
   user: {
     type: mongoose.Schema.ObjectId,

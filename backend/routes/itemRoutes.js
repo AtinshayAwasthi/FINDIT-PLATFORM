@@ -1,20 +1,18 @@
 
 const express = require('express');
-const router = express.Router();
 const multer = require('multer');
 const path = require('path');
-const {
-  createItem,
-  getItems,
-  getItem,
-  updateItem,
+const { 
+  getItems, 
+  getItem, 
+  createItem, 
+  updateItem, 
   deleteItem,
-  getRecentItems,
-  getUserItems
+  itemPhotoUpload
 } = require('../controllers/itemController');
 const { protect } = require('../middlewares/authMiddleware');
 
-// Configure multer storage
+// Set up multer for file uploads
 const storage = multer.diskStorage({
   destination: function(req, file, cb) {
     cb(null, 'uploads/');
@@ -26,28 +24,33 @@ const storage = multer.diskStorage({
   }
 });
 
-// Create multer upload instance
-const upload = multer({
+const upload = multer({ 
   storage: storage,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
   fileFilter: function(req, file, cb) {
-    // Accept images only
-    if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
-      return cb(new Error('Only image files are allowed!'), false);
+    const filetypes = /jpeg|jpg|png|webp/;
+    const mimetype = filetypes.test(file.mimetype);
+    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+
+    if (mimetype && extname) {
+      return cb(null, true);
     }
-    cb(null, true);
+    cb(new Error('Error: Images Only! (jpeg, jpg, png, webp)'));
   }
 });
 
-// Public routes
-router.get('/', getItems);
-router.get('/recent', getRecentItems);
-router.get('/:id', getItem);
+const router = express.Router();
 
-// Protected routes
-router.post('/', protect, upload.single('image'), createItem);
-router.put('/:id', protect, upload.single('image'), updateItem);
-router.delete('/:id', protect, deleteItem);
-router.get('/user/:type', protect, getUserItems);
+router.route('/')
+  .get(getItems)
+  .post(protect, upload.single('image'), createItem);
+
+router.route('/:id')
+  .get(getItem)
+  .put(protect, upload.single('image'), updateItem)
+  .delete(protect, deleteItem);
+
+router.route('/:id/photo')
+  .put(protect, upload.single('image'), itemPhotoUpload);
 
 module.exports = router;
