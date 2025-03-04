@@ -24,3 +24,11 @@ export interface AuthContextType extends AuthState {
   verifyEmail: (token: string) => Promise<boolean>;
   resendVerification: (email: string) => Promise<void>;
 }
+
+// Add the Google callback type to Window
+declare global {
+  interface Window {
+    onGoogleLibraryLoad?: () => void;
+    google?: any;
+  }
+}
