@@ -78,10 +78,6 @@ exports.login = async (req, res) => {
     // Check if user exists and include password in the query
     const user = await User.findOne({ email }).select('+password');
     
-    // Debug log
-    console.log('Login attempt for email:', email);
-    console.log('User found:', user ? 'Yes' : 'No');
-
     if (!user) {
       return res.status(401).json({ 
         success: false,
@@ -89,11 +85,8 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Use the matchPassword method from your User model
-    const isMatch = await user.matchPassword(password);
-    
-    // Debug log
-    console.log('Password match:', isMatch ? 'Yes' : 'No');
+    // Compare passwords using bcrypt directly
+    const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
       return res.status(401).json({ 
@@ -109,7 +102,6 @@ exports.login = async (req, res) => {
       { expiresIn: '24h' }
     );
 
-    // Send response without password
     res.status(200).json({
       success: true,
       token,
