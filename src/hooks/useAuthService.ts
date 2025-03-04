@@ -1,4 +1,5 @@
-import { useState } from 'react';
+
+import { useState, useEffect } from 'react';
 import { toast } from '@/components/ui/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { api } from '@/lib/api';
@@ -13,8 +14,29 @@ export const useAuthService = () => {
   });
   const navigate = useNavigate();
 
+  // Google Auth initialization
+  useEffect(() => {
+    // Load Google Sign-In API
+    const loadGoogleAuth = async () => {
+      const script = document.createElement('script');
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.async = true;
+      script.defer = true;
+      document.body.appendChild(script);
+      
+      window.onGoogleLibraryLoad = initializeGoogleSignIn;
+    };
+    
+    loadGoogleAuth();
+  }, []);
+  
+  const initializeGoogleSignIn = () => {
+    // This will be called when the Google library is loaded
+    console.log('Google Sign-In initialized');
+  };
+
   const updateAuthState = (user: User | null, token: string | null, isLoading: boolean = false) => {
-    const isAuthenticated = !!user && !!token;
+    const isAuthenticated = !!user && !!token && user.isEmailVerified;
     setState({ user, token, isAuthenticated, isLoading });
     
     // Update axios headers
@@ -52,19 +74,19 @@ export const useAuthService = () => {
     }
   };
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string, phoneNumber: string) => {
     setState(prev => ({ ...prev, isLoading: true }));
     try {
-      console.log('Attempting login with:', { email });
+      console.log('Attempting login with:', { email, phoneNumber });
 
       const response = await api.post('/api/auth/login', { 
         email, 
-        password 
+        password,
+        phoneNumber
       });
 
       console.log('Login response:', response.data);
 
-      // Simpler, more robust response handling
       if (!response.data) {
         throw new Error('Invalid response from server');
       }
@@ -74,6 +96,18 @@ export const useAuthService = () => {
       
       if (!token || !user) {
         throw new Error('Missing token or user in response');
+      }
+
+      // Check if email is verified
+      if (!user.isEmailVerified) {
+        toast({
+          variant: "destructive",
+          title: "Email Not Verified",
+          description: "Please verify your email before logging in. Check your inbox for the verification link.",
+        });
+        
+        setState(prev => ({ ...prev, isLoading: false }));
+        return null;
       }
 
       // Update auth state with user and token
@@ -100,28 +134,80 @@ export const useAuthService = () => {
     }
   };
 
-  const signup = async (name: string, email: string, password: string) => {
+  const googleLogin = async () => {
+    setState(prev => ({ ...prev, isLoading: true }));
+    try {
+      // This would be integrated with Google OAuth
+      // For now, we'll mock a successful Google login
+      console.log('Google login attempted');
+      
+      const response = await api.post('/api/auth/google-login');
+      
+      if (!response.data) {
+        throw new Error('Invalid response from server');
+      }
+
+      const { token, user } = response.data;
+      
+      if (!token || !user) {
+        throw new Error('Missing token or user in response');
+      }
+
+      // Check if email is verified
+      if (!user.isEmailVerified) {
+        toast({
+          variant: "destructive",
+          title: "Email Not Verified",
+          description: "Please verify your email before logging in. Check your inbox for the verification link.",
+        });
+        
+        setState(prev => ({ ...prev, isLoading: false }));
+        return null;
+      }
+
+      updateAuthState(user, token, false);
+      
+      toast({
+        title: "Welcome!",
+        description: "You have successfully logged in with Google.",
+      });
+      
+      navigate('/');
+      return user;
+    } catch (error: any) {
+      console.error('Google login error:', error);
+      const message = error.response?.data?.message || "Google login failed. Please try again.";
+      toast({
+        variant: "destructive",
+        title: "Login Failed",
+        description: message,
+      });
+      throw error;
+    } finally {
+      setState(prev => ({ ...prev, isLoading: false }));
+    }
+  };
+
+  const signup = async (name: string, email: string, password: string, phoneNumber: string) => {
     setState(prev => ({ ...prev, isLoading: true }));
     try {
       const response = await api.post('/api/auth/register', {
         name,
         email,
-        password
+        password,
+        phoneNumber
       }, {
         headers: {
           'Content-Type': 'application/json',
         }
       });
       
-      const { token, user } = response.data;
-      
-      updateAuthState(user, token, false);
-      
+      // Don't update auth state yet since email needs verification
       toast({
         title: "Account created!",
-        description: "You have successfully signed up.",
+        description: "Please check your email to verify your account before logging in.",
       });
-      navigate('/');
+      navigate('/login');
     } catch (error: any) {
       console.error('Signup error:', error);
       const message = error.response?.data?.message || 
@@ -130,6 +216,58 @@ export const useAuthService = () => {
       toast({
         variant: "destructive",
         title: "Signup Failed",
+        description: message,
+      });
+      throw error;
+    } finally {
+      setState(prev => ({ ...prev, isLoading: false }));
+    }
+  };
+
+  const verifyEmail = async (token: string) => {
+    setState(prev => ({ ...prev, isLoading: true }));
+    try {
+      const response = await api.post('/api/auth/verify-email', { token });
+      
+      toast({
+        title: "Email verified!",
+        description: "Your email has been successfully verified. You can now log in.",
+      });
+      
+      return true;
+    } catch (error: any) {
+      console.error('Email verification error:', error);
+      const message = error.response?.data?.message || 
+                    error.message || 
+                    "Email verification failed. Please try again.";
+      toast({
+        variant: "destructive",
+        title: "Verification Failed",
+        description: message,
+      });
+      return false;
+    } finally {
+      setState(prev => ({ ...prev, isLoading: false }));
+    }
+  };
+
+  const resendVerification = async (email: string) => {
+    setState(prev => ({ ...prev, isLoading: true }));
+    try {
+      await api.post('/api/auth/resend-verification', { email });
+      
+      toast({
+        title: "Verification email sent!",
+        description: "Please check your email for the verification link.",
+      });
+    } catch (error: any) {
+      console.error('Resend verification error:', error);
+      const message = error.response?.data?.message || 
+                    error.message || 
+                    "Failed to resend verification email. Please try again.";
+      toast({
+        variant: "destructive",
+        title: "Request Failed",
         description: message,
       });
       throw error;
@@ -150,8 +288,11 @@ export const useAuthService = () => {
   return {
     ...state,
     login,
+    googleLogin,
     signup,
     logout,
-    checkAuth
+    checkAuth,
+    verifyEmail,
+    resendVerification
   };
 };

@@ -3,7 +3,9 @@ export interface User {
   _id: string;
   name: string;
   email: string;
+  phoneNumber: string;
   createdAt: string;
+  isEmailVerified: boolean;
 }
 
 export interface AuthState {
@@ -14,8 +16,11 @@ export interface AuthState {
 }
 
 export interface AuthContextType extends AuthState {
-  login: (email: string, password: string) => Promise<void>;
-  signup: (name: string, email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, phoneNumber: string) => Promise<User | null>;
+  googleLogin: () => Promise<User | null>;
+  signup: (name: string, email: string, password: string, phoneNumber: string) => Promise<void>;
   logout: () => void;
-  checkAuth: () => Promise<void>;
+  checkAuth: () => Promise<User | null>;
+  verifyEmail: (token: string) => Promise<boolean>;
+  resendVerification: (email: string) => Promise<void>;
 }
