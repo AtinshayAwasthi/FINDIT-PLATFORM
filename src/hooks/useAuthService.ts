@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { toast } from '@/components/ui/use-toast';
 import { useNavigate } from 'react-router-dom';
@@ -35,6 +34,12 @@ export const useAuthService = () => {
   const checkAuth = async () => {
     setState(prev => ({ ...prev, isLoading: true }));
     try {
+      // Only attempt to check auth if we have a token
+      if (!state.token) {
+        setState(prev => ({ ...prev, isLoading: false }));
+        return null;
+      }
+      
       const response = await api.get('/api/auth/me');
       updateAuthState(response.data.user, state.token, false);
       return response.data.user;
@@ -50,37 +55,28 @@ export const useAuthService = () => {
   const login = async (email: string, password: string) => {
     setState(prev => ({ ...prev, isLoading: true }));
     try {
-      console.log('Attempting login with:', { email }); // Debug log
+      console.log('Attempting login with:', { email });
 
       const response = await api.post('/api/auth/login', { 
         email, 
         password 
       });
 
-      console.log('Login response:', response.data); // Debug log
+      console.log('Login response:', response.data);
 
-      // Check if we have the expected data structure from the API
-      if (!response.data || typeof response.data !== 'object') {
-        throw new Error('Invalid response format from server');
+      // Simpler, more robust response handling
+      if (!response.data) {
+        throw new Error('Invalid response from server');
       }
 
-      // Extract token and user from the response, handling potential structure differences
-      let token, user;
-      
-      if (response.data.token) {
-        token = response.data.token;
-      }
-      
-      if (response.data.user) {
-        user = response.data.user;
-      }
+      // Get token and user from response
+      const { token, user } = response.data;
       
       if (!token || !user) {
-        console.error('Missing token or user in response:', response.data);
-        throw new Error('Authentication failed: Missing token or user data');
+        throw new Error('Missing token or user in response');
       }
 
-      // Update auth state with the user and token from response
+      // Update auth state with user and token
       updateAuthState(user, token, false);
       
       toast({
@@ -89,8 +85,9 @@ export const useAuthService = () => {
       });
       
       navigate('/');
+      return user;
     } catch (error: any) {
-      console.error('Login error:', error); // Debug log
+      console.error('Login error:', error);
       const message = error.response?.data?.message || "Login failed. Please try again.";
       toast({
         variant: "destructive",
