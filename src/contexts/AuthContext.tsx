@@ -1,47 +1,195 @@
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { toast } from '@/components/ui/use-toast';
+import { useNavigate } from 'react-router-dom';
+import { api } from '@/lib/api';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { useAuthService } from '@/hooks/useAuthService';
-import { AuthContextType } from '@/types/auth';
+interface User {
+  _id: string;
+  name: string;
+  email: string;
+  createdAt: string;
+}
+
+interface AuthContextType {
+  user: User | null;
+  token: string | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  signup: (name: string, email: string, password: string) => Promise<void>;
+  logout: () => void;
+  checkAuth: () => Promise<void>;
+}
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const authService = useAuthService();
-  const [initialized, setInitialized] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
+  const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
 
-  // Initialize authentication state when component mounts
+  const isAuthenticated = !!user && !!token;
+
+  // Set up axios interceptor for token
   useEffect(() => {
-    console.log('AuthProvider initializing');
+    if (token) {
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    } else {
+      delete api.defaults.headers.common['Authorization'];
+    }
+  }, [token]);
+
+  useEffect(() => {
     const initAuth = async () => {
-      try {
-        if (authService.token) {
-          // If we have a token, validate it
-          await authService.checkAuth();
+      if (token) {
+        try {
+          await checkAuth();
+        } catch (error) {
+          console.error("Auth initialization failed:", error);
+          handleAuthError();
         }
-      } catch (error) {
-        console.error("Auth initialization failed:", error);
-        // Error already handled in checkAuth
-      } finally {
-        setInitialized(true);
-        console.log('Auth initialization complete');
+      } else {
+        setIsLoading(false);
       }
     };
 
     initAuth();
   }, []);
 
-  // Show a loading state while we initialize auth
-  if (!initialized && authService.isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
-        <span className="ml-3">Loading authentication...</span>
-      </div>
-    );
+  const handleAuthError = () => {
+    localStorage.removeItem('token');
+    delete api.defaults.headers.common['Authorization'];
+    setToken(null);
+    setUser(null);
+    setIsLoading(false);
+  };
+
+  const checkAuth = async () => {
+    setIsLoading(true);
+    try {
+      const response = await api.get('/api/auth/me');
+      setUser(response.data.user);
+      return response.data.user;
+    } catch (error) {
+      console.error("Auth check failed:", error);
+      handleAuthError();
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // AuthContext.tsx
+
+const login = async (email: string, password: string) => {
+  setIsLoading(true);
+  try {
+    console.log('Attempting login with:', { email }); // Debug log
+
+    const response = await api.post('/api/auth/login', { 
+      email, 
+      password 
+    });
+
+    console.log('Login response:', response.data); // Debug log
+
+    const { token, user } = response.data;
+    
+    if (!token || !user) {
+      throw new Error('Invalid response from server');
+    }
+
+    localStorage.setItem('token', token);
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    setToken(token);
+    setUser(user);
+    
+    toast({
+      title: "Welcome back!",
+      description: "You have successfully logged in.",
+    });
+    
+    navigate('/');
+  } catch (error: any) {
+    console.error('Login error:', error); // Debug log
+    const message = error.response?.data?.message || "Login failed. Please try again.";
+    toast({
+      variant: "destructive",
+      title: "Login Failed",
+      description: message,
+    });
+    throw error;
+  } finally {
+    setIsLoading(false);
   }
+};
+
+
+  const signup = async (name: string, email: string, password: string) => {
+    setIsLoading(true);
+    try {
+      const response = await api.post('/api/auth/register', {
+        name,
+        email,
+        password
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      const { token, user } = response.data;
+      
+      localStorage.setItem('token', token);
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      setToken(token);
+      setUser(user);
+      
+      toast({
+        title: "Account created!",
+        description: "You have successfully signed up.",
+      });
+      navigate('/');
+    } catch (error: any) {
+      console.error('Signup error:', error);
+      const message = error.response?.data?.message || 
+                     error.message || 
+                     "Signup failed. Please try again.";
+      toast({
+        variant: "destructive",
+        title: "Signup Failed",
+        description: message,
+      });
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const logout = () => {
+    localStorage.removeItem('token');
+    delete api.defaults.headers.common['Authorization'];
+    setToken(null);
+    setUser(null);
+    toast({
+      title: "Logged out",
+      description: "You have been logged out successfully.",
+    });
+    navigate('/');
+  };
 
   return (
-    <AuthContext.Provider value={authService}>
+    <AuthContext.Provider value={{ 
+      user, 
+      token, 
+      isAuthenticated, 
+      isLoading, 
+      login, 
+      signup, 
+      logout,
+      checkAuth
+    }}>
       {children}
     </AuthContext.Provider>
   );

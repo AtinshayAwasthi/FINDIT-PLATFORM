@@ -5,7 +5,6 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Menu, X, User, LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import ThemeToggle from '@/components/ThemeToggle';
 
 const Navigation = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -34,7 +33,7 @@ const Navigation = () => {
       <nav 
         className={cn(
           'fixed top-0 left-0 right-0 z-50 px-6 md:px-10 transition-all duration-300',
-          isScrolled ? 'py-4 bg-white/80 dark:bg-black/20 backdrop-blur-md shadow-sm' : 'py-6'
+          isScrolled ? 'py-4 bg-white/80 backdrop-blur-md shadow-sm dark:bg-black/20' : 'py-6'
         )}
       >
         <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -77,8 +76,6 @@ const Navigation = () => {
               </Link>
             ))}
             
-            <ThemeToggle />
-            
             {isAuthenticated ? (
               <div className="flex items-center gap-4">
                 <Link
@@ -107,20 +104,17 @@ const Navigation = () => {
           </div>
           
           {/* Mobile Menu Button */}
-          <div className="md:hidden flex items-center gap-2">
-            <ThemeToggle />
-            <button 
-              className="flex items-center"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              aria-label="Toggle menu"
-            >
-              {isMobileMenuOpen ? (
-                <X className="h-6 w-6 text-foreground" />
-              ) : (
-                <Menu className="h-6 w-6 text-foreground" />
-              )}
-            </button>
-          </div>
+          <button 
+            className="md:hidden flex items-center"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            {isMobileMenuOpen ? (
+              <X className="h-6 w-6 text-foreground" />
+            ) : (
+              <Menu className="h-6 w-6 text-foreground" />
+            )}
+          </button>
         </div>
       </nav>
       
