@@ -59,11 +59,25 @@ export const useAuthService = () => {
 
       console.log('Login response:', response.data); // Debug log
 
-      // Extract token and user directly from response.data
-      const { token, user } = response.data;
+      // Check if we have the expected data structure from the API
+      if (!response.data || typeof response.data !== 'object') {
+        throw new Error('Invalid response format from server');
+      }
+
+      // Extract token and user from the response, handling potential structure differences
+      let token, user;
+      
+      if (response.data.token) {
+        token = response.data.token;
+      }
+      
+      if (response.data.user) {
+        user = response.data.user;
+      }
       
       if (!token || !user) {
-        throw new Error('Invalid response from server');
+        console.error('Missing token or user in response:', response.data);
+        throw new Error('Authentication failed: Missing token or user data');
       }
 
       // Update auth state with the user and token from response

@@ -11,6 +11,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Set up axios interceptor for token
   useEffect(() => {
     if (authService.token) {
+      // Set the token in axios headers as soon as component mounts if we have a token
       authService.checkAuth().catch(error => {
         console.error("Auth initialization failed:", error);
       });
