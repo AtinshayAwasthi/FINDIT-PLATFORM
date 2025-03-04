@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from '@/components/ui/use-toast';
 import { useNavigate } from 'react-router-dom';
@@ -32,6 +31,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const isAuthenticated = !!user && !!token;
 
+  // Set up axios interceptor for token
+  useEffect(() => {
+    if (token) {
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    } else {
+      delete api.defaults.headers.common['Authorization'];
+    }
+  }, [token]);
+
   useEffect(() => {
     const initAuth = async () => {
       if (token) {
@@ -39,7 +47,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           await checkAuth();
         } catch (error) {
           console.error("Auth initialization failed:", error);
-          setIsLoading(false);
+          handleAuthError();
         }
       } else {
         setIsLoading(false);
@@ -49,38 +57,60 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     initAuth();
   }, []);
 
+  const handleAuthError = () => {
+    localStorage.removeItem('token');
+    delete api.defaults.headers.common['Authorization'];
+    setToken(null);
+    setUser(null);
+    setIsLoading(false);
+  };
+
   const checkAuth = async () => {
     setIsLoading(true);
     try {
       const response = await api.get('/api/auth/me');
       setUser(response.data.user);
-      setIsLoading(false);
       return response.data.user;
     } catch (error) {
       console.error("Auth check failed:", error);
-      localStorage.removeItem('token');
-      setToken(null);
-      setUser(null);
-      setIsLoading(false);
+      handleAuthError();
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const response = await api.post('/api/auth/login', { email, password });
-      const { token, user } = response.data;
+      console.log('Attempting login with:', { email }); // Debug log
+
+      const response = await api.post('/api/auth/login', { 
+        email, 
+        password 
+      });
+
+      console.log('Login response:', response.data); // Debug log
+
+      const { token: authToken, user: userData } = response.data;
       
-      localStorage.setItem('token', token);
-      setToken(token);
-      setUser(user);
+      if (!authToken || !userData) {
+        throw new Error('Invalid response from server');
+      }
+
+      localStorage.setItem('token', authToken);
+      api.defaults.headers.common['Authorization'] = `Bearer ${authToken}`;
+      setToken(authToken);
+      setUser(userData);
+      
       toast({
         title: "Welcome back!",
         description: "You have successfully logged in.",
       });
+      
       navigate('/');
     } catch (error: any) {
+      console.error('Login error:', error); // Debug log
       const message = error.response?.data?.message || "Login failed. Please try again.";
       toast({
         variant: "destructive",
@@ -96,19 +126,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signup = async (name: string, email: string, password: string) => {
     setIsLoading(true);
     try {
-      const response = await api.post('/api/auth/register', { name, email, password });
+      const response = await api.post('/api/auth/register', {
+        name,
+        email,
+        password
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
       const { token, user } = response.data;
       
       localStorage.setItem('token', token);
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       setToken(token);
       setUser(user);
+      
       toast({
         title: "Account created!",
         description: "You have successfully signed up.",
       });
       navigate('/');
     } catch (error: any) {
-      const message = error.response?.data?.message || "Signup failed. Please try again.";
+      console.error('Signup error:', error);
+      const message = error.response?.data?.message || 
+                     error.message || 
+                     "Signup failed. Please try again.";
       toast({
         variant: "destructive",
         title: "Signup Failed",
@@ -122,6 +166,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = () => {
     localStorage.removeItem('token');
+    delete api.defaults.headers.common['Authorization'];
     setToken(null);
     setUser(null);
     toast({

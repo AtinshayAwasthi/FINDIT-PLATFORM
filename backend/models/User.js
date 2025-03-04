@@ -1,4 +1,3 @@
-
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
@@ -13,6 +12,7 @@ const UserSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Please provide an email'],
     unique: true,
+    lowercase: true, // Add this to ensure email consistency
     match: [
       /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
       'Please provide a valid email'
@@ -30,20 +30,29 @@ const UserSchema = new mongoose.Schema({
   }
 });
 
-// Encrypt password before saving
+// Remove password hashing from pre-save middleware since we'll handle it in the controller
 UserSchema.pre('save', async function(next) {
   if (!this.isModified('password')) {
-    next();
+    return next();
   }
-
-  const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
   next();
 });
 
 // Match user entered password to hashed password in database
 UserSchema.methods.matchPassword = async function(enteredPassword) {
-  return await bcrypt.compare(enteredPassword, this.password);
+  try {
+    // Add debug logging
+    console.log('Comparing passwords:', {
+      enteredPassword,
+      hashedPassword: this.password
+    });
+    const isMatch = await bcrypt.compare(enteredPassword, this.password);
+    console.log('Password match result:', isMatch);
+    return isMatch;
+  } catch (error) {
+    console.error('Password comparison error:', error);
+    throw error;
+  }
 };
 
 module.exports = mongoose.model('User', UserSchema);
