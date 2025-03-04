@@ -15,32 +15,37 @@ import EmailVerification from '@/pages/EmailVerification';
 import './App.css';
 
 function App() {
+  // Adding a console log to help debug render issues
+  console.log('App component rendering');
+  
   return (
     <ThemeProvider>
       <AuthProvider>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/verify-email" element={<EmailVerification />} />
-          <Route path="/items" element={
-            <ProtectedRoute>
-              <Items />
-            </ProtectedRoute>
-          } />
-          <Route path="/report" element={
-            <ProtectedRoute>
-              <Report />
-            </ProtectedRoute>
-          } />
-          <Route path="/profile" element={
-            <ProtectedRoute>
-              <Profile />
-            </ProtectedRoute>
-          } />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-        <Toaster />
+        <div className="app-container">
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/verify-email" element={<EmailVerification />} />
+            <Route path="/items" element={
+              <ProtectedRoute>
+                <Items />
+              </ProtectedRoute>
+            } />
+            <Route path="/report" element={
+              <ProtectedRoute>
+                <Report />
+              </ProtectedRoute>
+            } />
+            <Route path="/profile" element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            } />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          <Toaster />
+        </div>
       </AuthProvider>
     </ThemeProvider>
   );

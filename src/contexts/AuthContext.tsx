@@ -11,6 +11,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Initialize authentication state when component mounts
   useEffect(() => {
+    console.log('AuthProvider initializing');
     const initAuth = async () => {
       try {
         if (authService.token) {
@@ -22,6 +23,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Error already handled in checkAuth
       } finally {
         setInitialized(true);
+        console.log('Auth initialization complete');
       }
     };
 
@@ -30,7 +32,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Show a loading state while we initialize auth
   if (!initialized && authService.isLoading) {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+        <span className="ml-3">Loading authentication...</span>
+      </div>
+    );
   }
 
   return (
