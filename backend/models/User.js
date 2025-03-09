@@ -1,4 +1,3 @@
-
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
@@ -13,35 +12,17 @@ const UserSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Please provide an email'],
     unique: true,
-    lowercase: true,
+    lowercase: true, // Add this to ensure email consistency
     match: [
       /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
       'Please provide a valid email'
     ]
-  },
-  phoneNumber: {
-    type: String,
-    required: [true, 'Please provide a phone number'],
-    trim: true
   },
   password: {
     type: String,
     required: [true, 'Please provide a password'],
     minlength: [6, 'Password must be at least 6 characters'],
     select: false
-  },
-  isEmailVerified: {
-    type: Boolean,
-    default: false
-  },
-  emailVerificationToken: {
-    type: String
-  },
-  emailVerificationTokenExpires: {
-    type: Date
-  },
-  googleId: {
-    type: String
   },
   createdAt: {
     type: Date,
@@ -60,6 +41,7 @@ UserSchema.pre('save', async function(next) {
 // Match user entered password to hashed password in database
 UserSchema.methods.matchPassword = async function(enteredPassword) {
   try {
+    // Add debug logging
     console.log('Comparing passwords:', {
       enteredPassword,
       hashedPassword: this.password
