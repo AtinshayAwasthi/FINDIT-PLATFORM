@@ -202,7 +202,7 @@ const Login = () => {
               transition={{ duration: 0.3 }}
               className="mb-6"
             >
-              <Alert variant="success" className="bg-green-50 border-green-200">
+              <Alert variant="default" className="bg-green-50 border-green-200">
                 <CheckCircleIcon className="h-4 w-4 text-green-600" />
                 <AlertTitle className="text-green-800">Email Verified!</AlertTitle>
                 <AlertDescription className="text-green-700">
