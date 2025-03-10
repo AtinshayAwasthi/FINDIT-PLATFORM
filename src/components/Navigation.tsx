@@ -42,10 +42,15 @@ const Navigation = () => {
             to="/" 
             className="text-2xl font-medium flex items-center gap-2"
           >
-            <div className="flex items-center justify-center bg-[#151921] text-white rounded-md w-10 h-10">
-              <span className="font-bold text-xl">F</span>
-            </div>
-            <span className="text-foreground font-semibold">indIt</span>
+            <motion.div 
+              initial={{ rotate: -10, scale: 0.9 }}
+              animate={{ rotate: 0, scale: 1 }}
+              transition={{ type: 'spring', stiffness: 200 }}
+              className="text-primary text-3xl font-bold"
+            >
+              🔍
+            </motion.div>
+            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent font-semibold">FindIt</span>
           </Link>
           
           {/* Desktop Navigation */}
