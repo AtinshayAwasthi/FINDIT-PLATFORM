@@ -223,7 +223,7 @@ const Index = () => {
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="mb-6 md:mb-0">
               <Link to="/" className="text-xl font-medium flex items-center gap-2">
-                <div className="flex items-center justify-center bg-black text-white rounded-full w-8 h-8">
+                <div className="flex items-center justify-center bg-[#151921] text-white rounded-md w-8 h-8">
                   <span className="font-bold text-sm">F</span>
                 </div>
                 <span>FindIt</span>

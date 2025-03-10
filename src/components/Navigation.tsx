@@ -42,10 +42,10 @@ const Navigation = () => {
             to="/" 
             className="text-2xl font-medium flex items-center gap-2"
           >
-            <div className="flex items-center justify-center bg-black text-white rounded-full w-10 h-10">
+            <div className="flex items-center justify-center bg-[#151921] text-white rounded-md w-10 h-10">
               <span className="font-bold text-xl">F</span>
             </div>
-            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent font-semibold">indIt</span>
+            <span className="text-foreground font-semibold">indIt</span>
           </Link>
           
           {/* Desktop Navigation */}
