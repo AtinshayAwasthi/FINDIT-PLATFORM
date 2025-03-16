@@ -20,6 +20,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ItemCardProps } from './ItemCard';
 import { Phone, Mail, Upload, AlertTriangle, MapPin, Clock, Tag, User } from 'lucide-react';
+import { requestsApi, reportsApi, contactApi } from '@/lib/api';
 
 const requestSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
@@ -29,7 +30,7 @@ const requestSchema = z.object({
 
 const reportSchema = z.object({
   reason: z.string().min(10, { message: "Please provide a detailed reason" }),
-  email: z.string().email({ message: "Please enter a valid email" }),
+  email: z.string().email({ message: "Please enter a valid email" }).optional(),
 });
 
 interface ItemDetailsDialogProps {
@@ -40,6 +41,12 @@ interface ItemDetailsDialogProps {
 
 const ItemDetailsDialog = ({ item, open, onOpenChange }: ItemDetailsDialogProps) => {
   const [activeTab, setActiveTab] = useState('details');
+  const [isLoading, setIsLoading] = useState(false);
+  const [contactInfo, setContactInfo] = useState<{
+    name?: string;
+    email?: string;
+    phone?: string;
+  } | null>(null);
 
   const requestForm = useForm<z.infer<typeof requestSchema>>({
     resolver: zodResolver(requestSchema),
@@ -58,20 +65,89 @@ const ItemDetailsDialog = ({ item, open, onOpenChange }: ItemDetailsDialogProps)
     },
   });
 
-  const handleRequestSubmit = (data: z.infer<typeof requestSchema>) => {
-    toast.success("Request submitted successfully", {
-      description: "We'll review your claim and contact you soon.",
-    });
-    requestForm.reset();
-    setActiveTab('details');
+  const handleRequestSubmit = async (data: z.infer<typeof requestSchema>) => {
+    if (!item?._id) return;
+    
+    setIsLoading(true);
+    try {
+      await requestsApi.create({
+        itemId: item._id,
+        name: data.name,
+        email: data.email,
+        proof: data.proof
+      });
+      
+      toast.success("Request submitted successfully", {
+        description: "We'll review your claim and contact you soon.",
+      });
+      requestForm.reset();
+      setActiveTab('details');
+    } catch (error) {
+      toast.error("Failed to submit request", {
+        description: "Please try again later.",
+      });
+      console.error('Submit request error:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleReportSubmit = (data: z.infer<typeof reportSchema>) => {
-    toast.success("Report submitted successfully", {
-      description: "Thank you for helping keep our platform accurate.",
-    });
-    reportForm.reset();
-    setActiveTab('details');
+  const handleReportSubmit = async (data: z.infer<typeof reportSchema>) => {
+    if (!item?._id) return;
+    
+    setIsLoading(true);
+    try {
+      await reportsApi.create({
+        itemId: item._id,
+        reason: data.reason,
+        email: data.email
+      });
+      
+      toast.success("Report submitted successfully", {
+        description: "Thank you for helping keep our platform accurate.",
+      });
+      reportForm.reset();
+      setActiveTab('details');
+    } catch (error) {
+      toast.error("Failed to submit report", {
+        description: "Please try again later.",
+      });
+      console.error('Submit report error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleContactRequest = async (method: 'email' | 'phone') => {
+    if (!item?._id) return;
+    
+    setIsLoading(true);
+    try {
+      const response = await contactApi.getItemContact(item._id);
+      setContactInfo(response.data);
+      
+      if (method === 'email' && response.data.email) {
+        window.location.href = `mailto:${response.data.email}`;
+      } else if (method === 'phone' && response.data.phone && response.data.phone !== 'Not provided') {
+        window.location.href = `tel:${response.data.phone}`;
+      } else {
+        toast.info(
+          method === 'phone' 
+            ? "Phone number not available" 
+            : "Email not available",
+          {
+            description: "Please try the other contact method."
+          }
+        );
+      }
+    } catch (error) {
+      toast.error("Failed to get contact information", {
+        description: "Please try again later.",
+      });
+      console.error('Get contact info error:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (!item) return null;
@@ -136,11 +212,21 @@ const ItemDetailsDialog = ({ item, open, onOpenChange }: ItemDetailsDialogProps)
             </div>
             
             <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-between">
-              <Button variant="outline" className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                className="flex items-center gap-2"
+                onClick={() => handleContactRequest('phone')}
+                disabled={isLoading}
+              >
                 <Phone className="h-4 w-4" />
                 Contact via Phone
               </Button>
-              <Button variant="outline" className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                className="flex items-center gap-2"
+                onClick={() => handleContactRequest('email')}
+                disabled={isLoading}
+              >
                 <Mail className="h-4 w-4" />
                 Contact via Email
               </Button>
@@ -204,10 +290,19 @@ const ItemDetailsDialog = ({ item, open, onOpenChange }: ItemDetailsDialogProps)
                 />
                 
                 <DialogFooter className="mt-6">
-                  <Button type="button" variant="outline" onClick={() => setActiveTab('details')}>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setActiveTab('details')}
+                    disabled={isLoading}
+                  >
                     Cancel
                   </Button>
-                  <Button type="submit" className="gap-2">
+                  <Button 
+                    type="submit" 
+                    className="gap-2"
+                    disabled={isLoading}
+                  >
                     <Upload className="h-4 w-4" />
                     Submit Request
                   </Button>
@@ -259,10 +354,20 @@ const ItemDetailsDialog = ({ item, open, onOpenChange }: ItemDetailsDialogProps)
                 />
                 
                 <DialogFooter className="mt-6">
-                  <Button type="button" variant="outline" onClick={() => setActiveTab('details')}>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setActiveTab('details')}
+                    disabled={isLoading}
+                  >
                     Cancel
                   </Button>
-                  <Button type="submit" variant="destructive" className="gap-2">
+                  <Button 
+                    type="submit" 
+                    variant="destructive" 
+                    className="gap-2"
+                    disabled={isLoading}
+                  >
                     <AlertTriangle className="h-4 w-4" />
                     Submit Report
                   </Button>
