@@ -1,24 +1,15 @@
-
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
 const dotenv = require('dotenv');
 const fs = require('fs');
-const cloudinary = require('cloudinary').v2;
 
 // Load environment variables
 dotenv.config();
 
 // Initialize Express
 const app = express();
-
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
-});
 
 // Create uploads directory if it doesn't exist
 const uploadsDir = path.join(__dirname, 'uploads');
@@ -56,9 +47,6 @@ app.get('/api/health', (req, res) => {
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/items', require('./routes/itemRoutes'));
-app.use('/api/requests', require('./routes/requestRoutes'));
-app.use('/api/reports', require('./routes/reportRoutes'));
-app.use('/api/contact', require('./routes/contactRoutes'));
 
 // 404 handler
 app.use((req, res, next) => {
