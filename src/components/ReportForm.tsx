@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -42,6 +41,7 @@ const ReportForm = () => {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
   
   useEffect(() => {
     if (!isAuthenticated) {
@@ -125,11 +125,15 @@ const ReportForm = () => {
       }
       
       // Send the request
-      await api.post('/api/items', formData, {
+      const response = await api.post('/api/items', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
+      
+      // Get image URL from response
+      const imageUrlFromResponse = response.data.imageUrl || null;
+      setImageUrl(imageUrlFromResponse);
       
       // Show success message
       toast({

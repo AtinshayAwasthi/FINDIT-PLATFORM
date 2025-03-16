@@ -18,6 +18,7 @@ const Index = () => {
       try {
         setIsLoading(true);
         const response = await api.get('/api/items/recent');
+        // Make sure to include the image URLs from the API response
         setFeaturedItems(response.data);
       } catch (error) {
         console.error('Error fetching recent items:', error);

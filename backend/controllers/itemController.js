@@ -1,7 +1,5 @@
-
 const Item = require('../models/Item');
-const fs = require('fs');
-const path = require('path');
+const cloudinary = require('cloudinary').v2;
 
 // Get all items with filtering
 exports.getItems = async (req, res) => {
@@ -122,9 +120,9 @@ exports.createItem = async (req, res) => {
       user: req.user.id
     });
     
-    // Handle image upload
+    // Handle image upload with Cloudinary
     if (req.file) {
-      item.image = `/uploads/${req.file.filename}`;
+      item.image = req.file.path; // Cloudinary returns the URL in the path
     }
     
     await item.save();
@@ -161,17 +159,15 @@ exports.updateItem = async (req, res) => {
     if (date) item.date = date;
     if (type) item.type = type;
     
-    // Handle image upload
+    // Handle image upload with Cloudinary
     if (req.file) {
-      // Delete old image if exists
+      // Delete old image from Cloudinary if exists
       if (item.image) {
-        const oldImagePath = path.join(__dirname, '..', item.image);
-        if (fs.existsSync(oldImagePath)) {
-          fs.unlinkSync(oldImagePath);
-        }
+        const publicId = item.image.split('/').pop().split('.')[0];
+        await cloudinary.uploader.destroy(`retriever-hub/${publicId}`);
       }
       
-      item.image = `/uploads/${req.file.filename}`;
+      item.image = req.file.path; // Cloudinary returns the URL in the path
     }
     
     await item.save();
@@ -198,12 +194,10 @@ exports.deleteItem = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized' });
     }
     
-    // Delete image if exists
+    // Delete image from Cloudinary if exists
     if (item.image) {
-      const imagePath = path.join(__dirname, '..', item.image);
-      if (fs.existsSync(imagePath)) {
-        fs.unlinkSync(imagePath);
-      }
+      const publicId = item.image.split('/').pop().split('.')[0];
+      await cloudinary.uploader.destroy(`retriever-hub/${publicId}`);
     }
     
     await item.remove();

@@ -23,9 +23,16 @@ const ItemCard = ({
   location, 
   date, 
   category, 
-  image = 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=800&auto=format&fit=crop'
+  image
 }: ItemCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  
+  // Default image if none provided or error loading the provided image
+  const defaultImage = `https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=800&auto=format&fit=crop`;
+  
+  // Determine image source with fallback to default
+  const imageSource = imageError || !image ? defaultImage : image;
   
   return (
     <motion.div 
@@ -43,13 +50,14 @@ const ItemCard = ({
     >
       <div className="relative aspect-[4/3] overflow-hidden bg-muted">
         <img 
-          src={image} 
+          src={imageSource} 
           alt={title}
           className={cn(
             "w-full h-full object-cover transition-transform duration-500",
             isHovered ? "scale-110" : "scale-100"
           )}
           loading="lazy"
+          onError={() => setImageError(true)}
         />
         <div 
           className={cn(
