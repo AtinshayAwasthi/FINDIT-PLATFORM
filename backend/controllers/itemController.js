@@ -1,3 +1,4 @@
+
 const Item = require('../models/Item');
 const cloudinary = require('cloudinary').v2;
 
@@ -200,7 +201,7 @@ exports.deleteItem = async (req, res) => {
       await cloudinary.uploader.destroy(`retriever-hub/${publicId}`);
     }
     
-    await item.remove();
+    await Item.deleteOne({ _id: req.params.id });
     
     res.status(200).json({ message: 'Item deleted' });
   } catch (error) {
