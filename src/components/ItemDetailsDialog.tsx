@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -30,7 +31,6 @@ const requestSchema = z.object({
 const reportSchema = z.object({
   reason: z.string().min(10, { message: "Please provide a detailed reason" }),
   email: z.string().email({ message: "Please enter a valid email" }),
-  details: z.string().min(10, { message: "Please provide additional details" }).default(""),
 });
 
 interface ItemDetailsDialogProps {
@@ -56,17 +56,11 @@ const ItemDetailsDialog = ({ item, open, onOpenChange }: ItemDetailsDialogProps)
     defaultValues: {
       reason: '',
       email: '',
-      details: '',
     },
   });
 
   const handleRequestSubmit = async (data: z.infer<typeof requestSchema>) => {
-    if (!item || !item.id) {
-      toast.error("Invalid item information", {
-        description: "Could not process your request. Please try again.",
-      });
-      return;
-    }
+    if (!item) return;
     
     try {
       await api.post(`/api/items/${item.id}/request`, {
@@ -88,20 +82,12 @@ const ItemDetailsDialog = ({ item, open, onOpenChange }: ItemDetailsDialogProps)
   };
 
   const handleReportSubmit = async (data: z.infer<typeof reportSchema>) => {
-    if (!item || !item.id) {
-      toast.error("Invalid item information", {
-        description: "Could not process your report. Please try again.",
-      });
-      return;
-    }
+    if (!item) return;
     
     try {
-      console.log(`Submitting report for item ID: ${item.id}`);
-      // Format the data according to what the backend controller expects
       await api.post(`/api/items/${item.id}/report`, {
-        reporterEmail: data.email,
-        reason: data.reason,
-        details: data.details || data.reason // Ensure details are provided
+        ...data,
+        itemId: item.id
       });
       
       toast.success("Report submitted successfully", {
@@ -109,21 +95,16 @@ const ItemDetailsDialog = ({ item, open, onOpenChange }: ItemDetailsDialogProps)
       });
       reportForm.reset();
       setActiveTab('details');
-    } catch (error: any) {
+    } catch (error) {
       console.error('Failed to submit report:', error);
       toast.error("Failed to submit report", {
-        description: error.response?.data?.message || "Please try again later.",
+        description: "Please try again later.",
       });
     }
   };
 
   const handleContactUser = async (method: 'phone' | 'email') => {
-    if (!item || !item.id) {
-      toast.error("Invalid item information", {
-        description: "Could not retrieve contact information. Please try again.",
-      });
-      return;
-    }
+    if (!item) return;
     
     try {
       const response = await api.get(`/api/items/${item.id}/contact`, {
