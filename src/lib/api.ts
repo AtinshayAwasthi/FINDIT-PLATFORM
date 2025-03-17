@@ -52,8 +52,20 @@ export const itemApi = {
   update: (id: string, data: FormData) => api.put(`/api/items/${id}`, data),
   delete: (id: string) => api.delete(`/api/items/${id}`),
   
-  // Request, Report, and Contact APIs
-  requestItem: (id: string, data: any) => api.post(`/api/items/${id}/request`, data),
-  reportItem: (id: string, data: any) => api.post(`/api/items/${id}/report`, data),
-  getContactInfo: (id: string, method: string) => api.get(`/api/items/${id}/contact`, { params: { method } }),
+  // Request APIs
+  requestItem: (id: string, data: { message: string }) => 
+    api.post(`/api/items/${id}/request`, data),
+  getItemRequests: (id: string) => 
+    api.get(`/api/items/${id}/requests`),
+  
+  // Report API
+  reportItem: (id: string, data: { 
+    reporterEmail: string, 
+    reason: string, 
+    details: string 
+  }) => api.post(`/api/items/${id}/report`, data),
+  
+  // Contact API
+  getContactInfo: (id: string) => 
+    api.get(`/api/items/${id}/contact`),
 };

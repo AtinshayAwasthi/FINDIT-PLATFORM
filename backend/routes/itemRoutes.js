@@ -9,6 +9,9 @@ const {
   updateItem, 
   deleteItem 
 } = require('../controllers/itemController');
+const { createRequest, getItemRequests } = require('../controllers/requestController');
+const { createReport } = require('../controllers/reportController');
+const { getContactInfo } = require('../controllers/contactController');
 const { protect } = require('../middlewares/authMiddleware');
 const upload = require('../middlewares/uploadMiddleware');
 
@@ -25,22 +28,14 @@ router.post('/', protect, upload.single('image'), createItem);
 router.put('/:id', protect, upload.single('image'), updateItem);
 router.delete('/:id', protect, deleteItem);
 
-// Item request, report, and contact endpoints
-router.post('/:id/request', protect, (req, res) => {
-  res.status(200).json({ message: 'Request submitted successfully' });
-});
+// Item request routes
+router.post('/:id/request', protect, createRequest);
+router.get('/:id/requests', protect, getItemRequests);
 
-router.post('/:id/report', (req, res) => {
-  res.status(200).json({ message: 'Report submitted successfully' });
-});
+// Item report route
+router.post('/:id/report', createReport);
 
-router.get('/:id/contact', protect, (req, res) => {
-  // In a real app, this would fetch the actual contact info from the database
-  // For now, return dummy data for demonstration
-  res.status(200).json({
-    phone: '555-123-4567',
-    email: 'contact@example.com'
-  });
-});
+// Item contact route
+router.get('/:id/contact', protect, getContactInfo);
 
 module.exports = router;
