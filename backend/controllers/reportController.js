@@ -8,6 +8,8 @@ exports.createReport = async (req, res) => {
     const { reporterEmail, reason, details } = req.body;
     const itemId = req.params.id;
 
+    console.log('Report submission received:', { itemId, reporterEmail, reason });
+
     if (!itemId) {
       return res.status(400).json({ 
         success: false,
@@ -25,10 +27,24 @@ exports.createReport = async (req, res) => {
     }
 
     // Validate required fields
-    if (!reporterEmail || !reason || !details) {
+    if (!reporterEmail) {
       return res.status(400).json({
         success: false,
-        message: 'Email, reason, and details are required fields'
+        message: 'Email is required'
+      });
+    }
+
+    if (!reason) {
+      return res.status(400).json({
+        success: false,
+        message: 'Reason is required'
+      });
+    }
+
+    if (!details) {
+      return res.status(400).json({
+        success: false,
+        message: 'Details are required'
       });
     }
 
@@ -68,7 +84,11 @@ exports.getAllReports = async (req, res) => {
     });
   } catch (error) {
     console.error('Get reports error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error',
+      error: error.message
+    });
   }
 };
 
@@ -78,7 +98,10 @@ exports.updateReportStatus = async (req, res) => {
     const { status } = req.body;
     
     if (!['pending', 'reviewed', 'resolved'].includes(status)) {
-      return res.status(400).json({ message: 'Invalid status value' });
+      return res.status(400).json({ 
+        success: false,
+        message: 'Invalid status value' 
+      });
     }
     
     const report = await ItemReport.findByIdAndUpdate(
@@ -88,7 +111,10 @@ exports.updateReportStatus = async (req, res) => {
     );
     
     if (!report) {
-      return res.status(404).json({ message: 'Report not found' });
+      return res.status(404).json({ 
+        success: false,
+        message: 'Report not found' 
+      });
     }
     
     res.status(200).json({
@@ -97,6 +123,10 @@ exports.updateReportStatus = async (req, res) => {
     });
   } catch (error) {
     console.error('Update report error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ 
+      success: false,
+      message: 'Server error',
+      error: error.message
+    });
   }
 };

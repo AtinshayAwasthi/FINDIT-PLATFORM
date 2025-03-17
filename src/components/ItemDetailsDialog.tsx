@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -97,6 +96,7 @@ const ItemDetailsDialog = ({ item, open, onOpenChange }: ItemDetailsDialogProps)
     }
     
     try {
+      console.log(`Submitting report for item ID: ${item.id}`);
       // Format the data according to what the backend controller expects
       await api.post(`/api/items/${item.id}/report`, {
         reporterEmail: data.email,
@@ -109,10 +109,10 @@ const ItemDetailsDialog = ({ item, open, onOpenChange }: ItemDetailsDialogProps)
       });
       reportForm.reset();
       setActiveTab('details');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to submit report:', error);
       toast.error("Failed to submit report", {
-        description: "Please try again later.",
+        description: error.response?.data?.message || "Please try again later.",
       });
     }
   };
