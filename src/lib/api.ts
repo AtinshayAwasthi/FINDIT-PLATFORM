@@ -41,3 +41,19 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+// Item APIs
+export const itemApi = {
+  getAll: () => api.get('/api/items'),
+  getRecent: () => api.get('/api/items/recent'),
+  getById: (id: string) => api.get(`/api/items/${id}`),
+  getUserItems: (type: string) => api.get(`/api/items/user/${type}`),
+  create: (data: FormData) => api.post('/api/items', data),
+  update: (id: string, data: FormData) => api.put(`/api/items/${id}`, data),
+  delete: (id: string) => api.delete(`/api/items/${id}`),
+  
+  // Request, Report, and Contact APIs
+  requestItem: (id: string, data: any) => api.post(`/api/items/${id}/request`, data),
+  reportItem: (id: string, data: any) => api.post(`/api/items/${id}/report`, data),
+  getContactInfo: (id: string, method: string) => api.get(`/api/items/${id}/contact`, { params: { method } }),
+};

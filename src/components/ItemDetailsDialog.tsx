@@ -20,6 +20,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ItemCardProps } from './ItemCard';
 import { Phone, Mail, Upload, AlertTriangle, MapPin, Clock, Tag, User } from 'lucide-react';
+import { api } from '@/lib/api';
 
 const requestSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
@@ -58,20 +59,70 @@ const ItemDetailsDialog = ({ item, open, onOpenChange }: ItemDetailsDialogProps)
     },
   });
 
-  const handleRequestSubmit = (data: z.infer<typeof requestSchema>) => {
-    toast.success("Request submitted successfully", {
-      description: "We'll review your claim and contact you soon.",
-    });
-    requestForm.reset();
-    setActiveTab('details');
+  const handleRequestSubmit = async (data: z.infer<typeof requestSchema>) => {
+    if (!item) return;
+    
+    try {
+      await api.post(`/api/items/${item.id}/request`, {
+        ...data,
+        itemId: item.id
+      });
+      
+      toast.success("Request submitted successfully", {
+        description: "We'll review your claim and contact you soon.",
+      });
+      requestForm.reset();
+      setActiveTab('details');
+    } catch (error) {
+      console.error('Failed to submit request:', error);
+      toast.error("Failed to submit request", {
+        description: "Please try again later.",
+      });
+    }
   };
 
-  const handleReportSubmit = (data: z.infer<typeof reportSchema>) => {
-    toast.success("Report submitted successfully", {
-      description: "Thank you for helping keep our platform accurate.",
-    });
-    reportForm.reset();
-    setActiveTab('details');
+  const handleReportSubmit = async (data: z.infer<typeof reportSchema>) => {
+    if (!item) return;
+    
+    try {
+      await api.post(`/api/items/${item.id}/report`, {
+        ...data,
+        itemId: item.id
+      });
+      
+      toast.success("Report submitted successfully", {
+        description: "Thank you for helping keep our platform accurate.",
+      });
+      reportForm.reset();
+      setActiveTab('details');
+    } catch (error) {
+      console.error('Failed to submit report:', error);
+      toast.error("Failed to submit report", {
+        description: "Please try again later.",
+      });
+    }
+  };
+
+  const handleContactUser = async (method: 'phone' | 'email') => {
+    if (!item) return;
+    
+    try {
+      const response = await api.get(`/api/items/${item.id}/contact`, {
+        params: { method }
+      });
+      
+      // Display contact info or initiate contact
+      if (method === 'phone' && response.data.phone) {
+        window.location.href = `tel:${response.data.phone}`;
+      } else if (method === 'email' && response.data.email) {
+        window.location.href = `mailto:${response.data.email}?subject=Regarding your ${item.type} item: ${item.title}`;
+      }
+    } catch (error) {
+      console.error('Failed to get contact information:', error);
+      toast.error("Failed to retrieve contact information", {
+        description: "Please try again later.",
+      });
+    }
   };
 
   if (!item) return null;
@@ -136,11 +187,19 @@ const ItemDetailsDialog = ({ item, open, onOpenChange }: ItemDetailsDialogProps)
             </div>
             
             <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-between">
-              <Button variant="outline" className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                className="flex items-center gap-2"
+                onClick={() => handleContactUser('phone')}
+              >
                 <Phone className="h-4 w-4" />
                 Contact via Phone
               </Button>
-              <Button variant="outline" className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                className="flex items-center gap-2"
+                onClick={() => handleContactUser('email')}
+              >
                 <Mail className="h-4 w-4" />
                 Contact via Email
               </Button>
