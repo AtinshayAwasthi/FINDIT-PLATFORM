@@ -10,9 +10,9 @@ const {
   deleteItem 
 } = require('../controllers/itemController');
 const { createRequest, getItemRequests } = require('../controllers/requestController');
-const { createReport } = require('../controllers/reportController');
+const { createReport, getAllReports, updateReportStatus } = require('../controllers/reportController');
 const { getContactInfo } = require('../controllers/contactController');
-const { protect } = require('../middlewares/authMiddleware');
+const { protect, admin } = require('../middlewares/authMiddleware');
 const upload = require('../middlewares/uploadMiddleware');
 
 const router = express.Router();
@@ -32,8 +32,10 @@ router.delete('/:id', protect, deleteItem);
 router.post('/:id/request', protect, createRequest);
 router.get('/:id/requests', protect, getItemRequests);
 
-// Item report route
-router.post('/:id/report', createReport);
+// Item report routes
+router.post('/:id/report', createReport); // Public route to allow non-logged in users to report
+router.get('/reports', protect, admin, getAllReports); // Admin only
+router.put('/reports/:reportId', protect, admin, updateReportStatus); // Admin only
 
 // Item contact route
 router.get('/:id/contact', protect, getContactInfo);

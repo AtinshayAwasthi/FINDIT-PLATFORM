@@ -31,6 +31,7 @@ const requestSchema = z.object({
 const reportSchema = z.object({
   reason: z.string().min(10, { message: "Please provide a detailed reason" }),
   email: z.string().email({ message: "Please enter a valid email" }),
+  details: z.string().min(10, { message: "Please provide additional details" }).default(""),
 });
 
 interface ItemDetailsDialogProps {
@@ -56,11 +57,17 @@ const ItemDetailsDialog = ({ item, open, onOpenChange }: ItemDetailsDialogProps)
     defaultValues: {
       reason: '',
       email: '',
+      details: '',
     },
   });
 
   const handleRequestSubmit = async (data: z.infer<typeof requestSchema>) => {
-    if (!item) return;
+    if (!item || !item.id) {
+      toast.error("Invalid item information", {
+        description: "Could not process your request. Please try again.",
+      });
+      return;
+    }
     
     try {
       await api.post(`/api/items/${item.id}/request`, {
@@ -82,12 +89,19 @@ const ItemDetailsDialog = ({ item, open, onOpenChange }: ItemDetailsDialogProps)
   };
 
   const handleReportSubmit = async (data: z.infer<typeof reportSchema>) => {
-    if (!item) return;
+    if (!item || !item.id) {
+      toast.error("Invalid item information", {
+        description: "Could not process your report. Please try again.",
+      });
+      return;
+    }
     
     try {
+      // Format the data according to what the backend controller expects
       await api.post(`/api/items/${item.id}/report`, {
-        ...data,
-        itemId: item.id
+        reporterEmail: data.email,
+        reason: data.reason,
+        details: data.details || data.reason // Ensure details are provided
       });
       
       toast.success("Report submitted successfully", {
@@ -104,7 +118,12 @@ const ItemDetailsDialog = ({ item, open, onOpenChange }: ItemDetailsDialogProps)
   };
 
   const handleContactUser = async (method: 'phone' | 'email') => {
-    if (!item) return;
+    if (!item || !item.id) {
+      toast.error("Invalid item information", {
+        description: "Could not retrieve contact information. Please try again.",
+      });
+      return;
+    }
     
     try {
       const response = await api.get(`/api/items/${item.id}/contact`, {
