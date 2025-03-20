@@ -63,6 +63,15 @@ const Profile = () => {
                     <span>Member since {new Date(user?.createdAt || Date.now()).toLocaleDateString()}</span>
                   </p>
                 </div>
+
+                <div>
+            <label className="text-sm font-medium text-muted-foreground">Email</label>
+            <p className="text-foreground">{user?.email}</p>
+          </div>
+          <div>
+            <label className="text-sm font-medium text-muted-foreground">Mobile</label>
+            <p className="text-foreground">{user?.mobile}</p>
+          </div>
                 
                 <div className="flex gap-3 w-full sm:w-auto mt-4 sm:mt-0">
                   <Button variant="outline" size="sm" className="flex-1 sm:flex-none">

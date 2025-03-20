@@ -106,11 +106,25 @@ exports.getItemById = async (req, res) => {
 };
 
 // Create a new item
+// Enhanced createItem function
 exports.createItem = async (req, res) => {
   try {
     const { title, description, location, category, date, type } = req.body;
     
-    // Create new item
+    // Add validation
+    if (!title || !description || !location || !category || !date || !type) {
+      return res.status(400).json({ 
+        message: 'Please provide all required fields'
+      });
+    }
+
+    // Log the request data
+    console.log('Creating item with data:', {
+      body: req.body,
+      file: req.file,
+      userId: req.user.id
+    });
+    
     const item = new Item({
       title,
       description,
@@ -121,17 +135,21 @@ exports.createItem = async (req, res) => {
       user: req.user.id
     });
     
-    // Handle image upload with Cloudinary
     if (req.file) {
-      item.image = req.file.path; // Cloudinary returns the URL in the path
+      item.image = req.file.path;
     }
     
-    await item.save();
+    // Add await here and log the saved item
+    const savedItem = await item.save();
+    console.log('Item saved successfully:', savedItem);
     
-    res.status(201).json(item);
+    res.status(201).json(savedItem);
   } catch (error) {
     console.error('Create item error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ 
+      message: 'Server error',
+      error: error.message 
+    });
   }
 };
 

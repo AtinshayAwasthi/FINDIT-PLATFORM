@@ -5,10 +5,10 @@ const bcrypt = require('bcryptjs');
 // Register a new user
 exports.register = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password ,mobile} = req.body;
 
     // Validate input
-    if (!name || !email || !password) {
+    if (!name || !email || !password || !mobile) {
       return res.status(400).json({ 
         message: 'Please provide all required fields' 
       });
@@ -28,6 +28,7 @@ exports.register = async (req, res) => {
     user = new User({
       name,
       email,
+      mobile,
       password: hashedPassword
     });
 
@@ -47,6 +48,7 @@ exports.register = async (req, res) => {
         _id: user._id,
         name: user.name,
         email: user.email,
+        mobile: user.mobile,
         createdAt: user.createdAt
       }
     });

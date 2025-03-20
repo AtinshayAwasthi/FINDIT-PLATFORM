@@ -1,9 +1,10 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { toast } from '@/components/ui/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { api } from '@/lib/api';
 
 interface User {
+  mobile: ReactNode;
   _id: string;
   name: string;
   email: string;
@@ -16,7 +17,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  signup: (name: string, email: string, password: string) => Promise<void>;
+  signup: (name: string, email: string, password: string, mobile: string) => Promise<void>;
   logout: () => void;
   checkAuth: () => Promise<void>;
 }
@@ -123,13 +124,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signup = async (name: string, email: string, password: string) => {
+  const signup = async (name: string, email: string, password: string, mobile: string) => {
     setIsLoading(true);
     try {
       const response = await api.post('/api/auth/register', {
         name,
         email,
-        password
+        password,
+        mobile
       }, {
         headers: {
           'Content-Type': 'application/json',
@@ -148,6 +150,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: "You have successfully signed up.",
       });
       navigate('/');
+  
     } catch (error: any) {
       console.error('Signup error:', error);
       const message = error.response?.data?.message || 
