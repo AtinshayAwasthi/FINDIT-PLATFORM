@@ -86,7 +86,7 @@ const Hero = () => {
           Lost something?
           <span className="block md:inline"> We'll help you </span>
           <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            find it.
+            FindIt ...
           </span>
         </motion.h1>
         
