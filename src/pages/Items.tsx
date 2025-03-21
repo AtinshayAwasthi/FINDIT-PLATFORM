@@ -299,7 +299,7 @@ const Items = () => {
       <footer className="py-8 px-6 md:px-10 bg-secondary border-t border-border text-center">
         <div className="max-w-7xl mx-auto">
           <p className="text-sm text-foreground/60">
-            &copy; {new Date().getFullYear()} RetrieverHub. All rights reserved.
+            &copy; {new Date().getFullYear()} FindIt. All rights reserved.
           </p>
         </div>
       </footer>

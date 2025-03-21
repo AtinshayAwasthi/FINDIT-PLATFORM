@@ -94,7 +94,7 @@ const Hero = () => {
           variants={itemVariants}
           className="text-lg md:text-xl mb-12 max-w-3xl mx-auto text-foreground/80"
         >
-          RetrieverHub connects people who have lost items with those who have found them.
+          FindIt connects people who have lost items with those who have found them.
           Our intuitive platform makes the process simple and efficient.
         </motion.p>
         
